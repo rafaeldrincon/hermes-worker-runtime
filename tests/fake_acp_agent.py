@@ -7,6 +7,7 @@ hang        never answer the prompt (until cancelled / killed)
 crash       exit mid-prompt without answering (agent process dies)
 auth        fail the prompt with ACP auth_required (-32000)
 refusal     stop with stop_reason=refusal
+board       report the board slug from the environment
 env         report the names of the environment variables it received
 """
 
@@ -76,6 +77,9 @@ class FakeAgent:
                          PermissionOption(option_id="no", name="Reject", kind="reject_once")])
             chosen = getattr(resp.outcome, "option_id", None) or resp.outcome.outcome
             await self._say(sid, _block("success", f"permission={chosen}"))
+            return PromptResponse(stop_reason="end_turn")
+        if MODE == "board":
+            await self._say(sid, _block("success", os.environ["WR_BOARD"]))
             return PromptResponse(stop_reason="end_turn")
         if MODE == "env":
             await self._say(sid, _block("success", ",".join(sorted(os.environ))))

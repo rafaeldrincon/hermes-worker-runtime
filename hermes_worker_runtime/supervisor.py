@@ -117,6 +117,7 @@ class Supervisor:
         env = build_child_env(self.lane, extra={
             "WR_TASK_ID": self.task_id, "WR_RUN_ID": str(self.run_id),
             "WR_WORKSPACE": str(workspace), "WR_LANE": self.lane.name,
+            "WR_BOARD": self.board or "default",
         })
         log.redact = Redactor(env)
         ctx = LaunchContext(task_id=self.task_id, run_id=self.run_id, title=task.title,

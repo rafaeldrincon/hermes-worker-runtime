@@ -295,7 +295,8 @@ A fully commented example is in [examples/worker-runtime.yaml](examples/worker-r
 
 </details>
 
-Every worker also receives `WR_TASK_ID`, `WR_RUN_ID`, `WR_WORKSPACE` and `WR_LANE`.
+Every worker also receives `WR_TASK_ID`, `WR_RUN_ID`, `WR_WORKSPACE`, `WR_LANE` and
+`WR_BOARD` (the board slug, or `default` for the default board).
 
 ## Agents
 

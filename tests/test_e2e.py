@@ -266,7 +266,7 @@ def test_acp_child_env_is_filtered(board, monkeypatch):
     assert settle(board, tid) == "done"
     names = set(h.get_task(board, tid).result.split(","))
     assert "LEAKY_SECRET" not in names and not any(n.startswith("HERMES_KANBAN") for n in names)
-    assert {"WR_TASK_ID", "WR_WORKSPACE", "FAKE_ACP_MODE"} <= names
+    assert {"WR_TASK_ID", "WR_WORKSPACE", "WR_BOARD", "FAKE_ACP_MODE"} <= names
 
 
 def test_acp_auth_failure_is_terminal(board):
@@ -331,3 +331,36 @@ def _alive(pid: int) -> bool:
     import subprocess
     stat = subprocess.run(["ps", "-o", "stat=", "-p", str(pid)], capture_output=True, text=True)
     return stat.returncode == 0 and not stat.stdout.strip().startswith("Z")
+
+
+@pytest.mark.parametrize("slug", [None, "default", "infra"])
+@pytest.mark.parametrize("adapter", ["command", "acp"])
+def test_child_receives_board_slug(hermes_home, slug, adapter):
+    from hermes_worker_runtime.supervisor import Supervisor
+
+    if slug:
+        h.kb.create_board(slug)
+    else:
+        h.kb.init_db()
+    conn = h.connect(slug)
+    try:
+        lane_config = (cmd("wr:tests", [PY, "-c", "import os; print(os.environ['WR_BOARD'])"])
+                       if adapter == "command" else
+                       acp("wr:tests", "board", on_success="complete"))
+        lane = config(t=lane_config).lanes["wr:tests"]
+        tid = make_task(conn, assignee=lane.assignee)
+        claimer = h.new_claimer()
+        task = h.claim_task(conn, tid, claimer=claimer, ttl_seconds=60)
+        sup = Supervisor(board=slug, task_id=tid, run_id=task.current_run_id,
+                         claimer=claimer, lane=lane)
+        assert sup.run() == 0
+        task = h.get_task(conn, tid)
+        assert task.status == "done"
+        expected = slug or "default"
+        if adapter == "command":
+            text = h.worker_log_path(tid, board=slug).read_text()
+            assert expected in [line.split("] ", 1)[-1] for line in text.splitlines()]
+        else:
+            assert task.result == expected
+    finally:
+        conn.close()

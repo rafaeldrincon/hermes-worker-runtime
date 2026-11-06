@@ -22,9 +22,9 @@ def test_only_allowlisted_env_reaches_child():
 def test_pass_and_set_but_never_hermes_kanban():
     env = build_child_env(lane({"pass": ["GH_TOKEN", "HERMES_KANBAN_TASK"],
                                 "set": {"CI": "1", "HERMES_KANBAN_CLAIM": "x"}}),
-                          parent=PARENT, extra={"WR_TASK_ID": "t_1"})
+                          parent=PARENT, extra={"WR_TASK_ID": "t_1", "WR_BOARD": "infra"})
     assert env["GH_TOKEN"] == PARENT["GH_TOKEN"] and env["CI"] == "1"
-    assert env["WR_TASK_ID"] == "t_1"
+    assert env["WR_TASK_ID"] == "t_1" and env["WR_BOARD"] == "infra"
     assert not any(k.startswith("HERMES_KANBAN_") for k in env)
     assert "OPENAI_API_KEY" not in env
 
