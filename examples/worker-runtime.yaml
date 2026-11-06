@@ -3,6 +3,7 @@
 # rather than guess. Only assignees listed here are ever claimed.
 
 boards: all                      # or a list of board slugs: [default, infra]
+# max_concurrent_runs: 4         # optional total cap across all lanes and served boards
 poll_interval_seconds: 5
 heartbeat_interval_seconds: 30   # claim heartbeat (ownership check)
 # claim_ttl_seconds: 900         # default: Hermes' own claim TTL

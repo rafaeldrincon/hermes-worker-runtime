@@ -50,9 +50,20 @@ class Scheduler:
         result = TickResult()
         self.reap()
         result.swept_orphans = sweep_orphans()
-        for board in self._boards():
+        boards = self._boards()
+        total_running = 0
+        if self.config.max_concurrent_runs is not None:
+            # Count every served board before claiming, including boards visited later.
+            # A failed count aborts the tick rather than underestimating capacity.
+            for board in boards:
+                conn = h.connect(board)
+                try:
+                    total_running += sum(h.running_counts(conn, self.config.lanes).values())
+                finally:
+                    conn.close()
+        for board in boards:
             try:
-                self._tick_board(board, result)
+                self._tick_board(board, result, total_running)
             except Exception as exc:
                 log.warning("board %s: tick failed: %s", board, exc)
         return result
@@ -62,7 +73,7 @@ class Scheduler:
             return list(self.config.boards)
         return h.board_slugs()
 
-    def _tick_board(self, board: str, result: TickResult) -> None:
+    def _tick_board(self, board: str, result: TickResult, total_running: int = 0) -> None:
         conn = h.connect(board)
         try:
             lanes = self.config.lanes
@@ -70,7 +81,9 @@ class Scheduler:
             for assignee, lane in lanes.items():
                 ready = h.list_tasks(conn, status="ready", assignee=assignee)
                 for task in ready:
-                    if running[assignee] >= lane.concurrency:
+                    if (running[assignee] >= lane.concurrency or
+                            (self.config.max_concurrent_runs is not None and
+                             total_running + len(result.claimed) >= self.config.max_concurrent_runs)):
                         result.capped.append(task.id)
                         continue
                     if task.claim_lock:

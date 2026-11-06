@@ -16,7 +16,7 @@ def test_minimal_command_lane_defaults():
     lane = c.lane_for("WR:Tests ")
     assert lane.name == "tests" and lane.command == ("pytest", "-q")
     assert (lane.on_success, lane.on_failure, lane.concurrency) == ("complete", "block", 1)
-    assert c.boards is None and c.claim_ttl_seconds is None
+    assert c.boards is None and c.claim_ttl_seconds is None and c.max_concurrent_runs is None
 
 
 def test_acp_lane_defaults_to_review_and_fail():
@@ -73,3 +73,15 @@ def test_lane_roundtrip():
     acp = parse_config(cfg(c={"assignee": "wr:c", "adapter": "acp",
                               "agent_command": ["my-agent", "--acp"]})).lanes["wr:c"]
     assert Lane.from_dict(acp.to_dict()) == acp
+
+
+@pytest.mark.parametrize("cap", [1, 4, 100])
+def test_max_concurrent_runs(cap):
+    c = parse_config({**cfg(t=cmd_lane()), "max_concurrent_runs": cap})
+    assert c.max_concurrent_runs == cap
+
+
+@pytest.mark.parametrize("cap", [0, -1, True, False, 1.0, 1.5, "2", None, [], {}])
+def test_invalid_max_concurrent_runs(cap):
+    with pytest.raises(ConfigError, match="max_concurrent_runs.*positive integer"):
+        parse_config({**cfg(t=cmd_lane()), "max_concurrent_runs": cap})

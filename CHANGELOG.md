@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Optional `max_concurrent_runs` cap across configured lanes and served boards,
+  recomputed from the board on each tick and reported by `doctor`.
+
 ## [0.1.1] - 2026-09-26
 
 ### Fixed

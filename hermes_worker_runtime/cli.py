@@ -101,6 +101,7 @@ def _doctor(config) -> int:
                   "it they stay 'running'. Start the gateway with kanban.dispatch_in_gateway "
                   "enabled (the default), or run `hermes kanban dispatch` periodically.")
     print(f"boards        : {', '.join(config.boards) if config.boards else 'all'}")
+    print(f"max_concurrent_runs : {config.max_concurrent_runs or 'unlimited'}")
     worst = 0
     for assignee, lane in config.lanes.items():
         ok, why = create_adapter(lane).available()

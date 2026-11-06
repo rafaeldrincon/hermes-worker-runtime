@@ -136,6 +136,7 @@ Prefer to let an agent do it? See [Set up with an AI agent](#set-up-with-an-ai-a
 hermes kanban : /Users/you/.hermes/hermes-agent/hermes_cli/kanban_db.py
 mode          : pid-tracked
 boards        : all
+max_concurrent_runs : unlimited
 lane tests        wr:tests         adapter=command  concurrency=2 OK
 lane codex        wr:codex         adapter=acp      concurrency=1 OK
 lane claude       wr:claude        adapter=acp      concurrency=1 OK
@@ -288,6 +289,7 @@ A fully commented example is in [examples/worker-runtime.yaml](examples/worker-r
 | Key | Default | Meaning |
 |---|---|---|
 | `boards` | `all` | `all` (every non-archived board) or a list of board slugs |
+| `max_concurrent_runs` | unset (no cap) | Maximum running cards across all configured lanes and served boards; positive integer |
 | `poll_interval_seconds` | `5` | How often the daemon looks for ready cards |
 | `heartbeat_interval_seconds` | `30` | Claim heartbeat and ownership check cadence |
 | `worker_heartbeat_interval_seconds` | `300` | Liveness heartbeat for Hermes' stale-worker detection |

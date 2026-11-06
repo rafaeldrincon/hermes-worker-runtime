@@ -22,16 +22,21 @@ def test_config_error_exits_2(hermes_home, capsys):
 
 
 @needs_hermes
-def test_lanes_and_doctor(hermes_home, capsys):
+@pytest.mark.parametrize("cap", [None, 2])
+def test_lanes_and_doctor(hermes_home, capsys, cap):
     write(hermes_home, "lanes:\n  tests:\n    assignee: wr:tests\n    adapter: command\n"
                        "    command: [\"true\"]\n  ghost:\n    assignee: wr:ghost\n"
                        "    adapter: command\n    command: [no-such-binary-xyz]\n")
+    if cap is not None:
+        path = hermes_home / "worker-runtime.yaml"
+        path.write_text(path.read_text() + f"max_concurrent_runs: {cap}\n")
     assert cli.main(["lanes"]) == 0
     lanes = json.loads(capsys.readouterr().out)
     assert set(lanes) == {"wr:tests", "wr:ghost"}
     assert cli.main(["doctor"]) == 1
     out = capsys.readouterr().out
     assert "pid-tracked" in out and "UNAVAILABLE: executable not found" in out
+    assert f"max_concurrent_runs : {cap or 'unlimited'}" in out
 
 
 def test_plugin_registers_cli_command():

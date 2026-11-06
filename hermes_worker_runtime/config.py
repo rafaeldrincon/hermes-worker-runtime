@@ -22,7 +22,7 @@ PERMISSION_POLICIES = {"allow", "deny"}
 _ASSIGNEE_RE = re.compile(r"^wr:[a-z0-9][a-z0-9._-]{0,62}$")
 
 _TOP_KEYS = {"boards", "poll_interval_seconds", "heartbeat_interval_seconds",
-             "worker_heartbeat_interval_seconds", "claim_ttl_seconds", "lanes"}
+             "worker_heartbeat_interval_seconds", "claim_ttl_seconds", "max_concurrent_runs", "lanes"}
 _LANE_KEYS = {"assignee", "adapter", "command", "agent", "agent_command", "concurrency",
               "timeout_seconds", "on_success", "on_failure", "reviewer", "env",
               "permission_policy", "kill_grace_seconds", "instructions"}
@@ -83,6 +83,7 @@ class RuntimeConfig:
     heartbeat_interval_seconds: float = 30.0
     worker_heartbeat_interval_seconds: float = 300.0
     claim_ttl_seconds: Optional[int] = None
+    max_concurrent_runs: Optional[int] = None
 
     def lane_for(self, assignee: Optional[str]) -> Optional[Lane]:
         if not assignee:
@@ -130,10 +131,16 @@ def parse_config(raw: Any) -> RuntimeConfig:
     else:
         raise ConfigError("boards must be 'all' or a non-empty list of board slugs")
 
+    cap = raw.get("max_concurrent_runs")
+    if "max_concurrent_runs" in raw and (
+            isinstance(cap, bool) or not isinstance(cap, int) or cap <= 0):
+        raise ConfigError("config.max_concurrent_runs must be a positive integer")
+
     ttl = raw.get("claim_ttl_seconds")
     return RuntimeConfig(
         lanes=lanes,
         boards=boards_t,
+        max_concurrent_runs=cap,
         poll_interval_seconds=_positive(raw, "poll_interval_seconds", 5.0, float),
         heartbeat_interval_seconds=_positive(raw, "heartbeat_interval_seconds", 30.0, float),
         worker_heartbeat_interval_seconds=_positive(
